@@ -2,11 +2,11 @@
   (:require [amazonica.aws.s3 :as s3]
             [dk.ative.docjure.spreadsheet :as doc]
             [vrbo.config :refer [s3-config
-                                 with-s3-credentials]]))
+                                 with-aws-credentials]]))
 
 
 (defn extract-obj [obj-key]
-  (:input-stream (with-s3-credentials s3-config
+  (:input-stream (with-aws-credentials s3-config
                    (s3/get-object
                     :bucket-name (:bucket-name s3-config)
                     :key obj-key))))

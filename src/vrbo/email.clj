@@ -4,7 +4,7 @@
             [hiccup.core :refer [html]]
             [hiccup.page :refer [include-css
                                  include-js]]
-            [vrbo.config :refer [with-s3-credentials
+            [vrbo.config :refer [with-aws-credentials
                                  config]]))
 
 
@@ -18,7 +18,7 @@
                (include-js (str "https://maxcdn.bootstrapcdn.com"
                                 "/bootstrap/3.3.7/js/bootstrap.min.js"))
                [:body table]])]
-    (with-s3-credentials config
+    (with-aws-credentials config
       (ses/send-email :destination {:to-addresses [(:email config)]}
                       :source (:email config)
                       :message {:subject "Daily VRBO Position Alert"

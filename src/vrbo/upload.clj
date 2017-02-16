@@ -1,11 +1,11 @@
 (ns vrbo.upload
   (:require [amazonica.aws.dynamodbv2 :as db]
             [vrbo.config :refer [dynamo-config
-                                 with-s3-credentials]]))
+                                 with-aws-credentials]]))
 
 
 (defn dynamo-upload [listings-group]
-  (with-s3-credentials dynamo-config
+  (with-aws-credentials dynamo-config
     (db/batch-write-item :return-consumed-capacity "TOTAL"
                          :return-item-collection-metrics "SIZE"
                          :request-items
