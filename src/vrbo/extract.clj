@@ -17,7 +17,7 @@
     (->> obj-key
          extract-obj
          doc/load-workbook
-         (doc/select-sheet "excel_marketing_complex")
-         (doc/select-columns {:A :unit :B :listing-id :C :search-page})
+         (doc/select-sheet "listings")
+         (doc/select-columns {:B :unit :C :listing-id :D :search-page})
          rest
          (map #(update % :listing-id (comp str int))))))
