@@ -13,7 +13,6 @@
                  [com.amazonaws/aws-java-sdk-s3 "1.11.82"]
                  [com.amazonaws/aws-java-sdk-ses "1.11.82"]
                  [dk.ative/docjure "1.11.0"]
-                 [enlive "1.1.6"]
                  [environ "1.1.0"]
                  [hiccup "1.0.5"]
                  [hiccup-table "0.2.0"]
