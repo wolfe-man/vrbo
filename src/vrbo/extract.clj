@@ -18,6 +18,6 @@
          extract-obj
          doc/load-workbook
          (doc/select-sheet "listings")
-         (doc/select-columns {:B :unit :C :listing-id :D :search-page})
+         (doc/select-columns {:A :unit :B :listing-id :C :search-page})
          rest
          (map #(update % :listing-id (comp str int))))))

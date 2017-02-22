@@ -16,4 +16,4 @@
 
 (defn -handleRequest
   [this input output context]
-  (execute))
+  (time (execute)))
