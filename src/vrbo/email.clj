@@ -1,11 +1,13 @@
 (ns vrbo.email
   (:require [amazonica.aws.simpleemail :as ses]
+            [clj-time.local :as l]
+            [clj-time.format :as f]
             [hiccup.table :as ht]
             [hiccup.core :refer [html]]
             [hiccup.page :refer [include-css
                                  include-js]]
-            [vrbo.config :refer [with-aws-credentials
-                                 config]]))
+            [postal.core :refer [send-message]]
+            [vrbo.config :refer [config]]))
 
 
 (defn deliver-email [table]
@@ -17,12 +19,21 @@
                                 "/ajax/libs/jquery/3.1.1/jquery.min.js"))
                (include-js (str "https://maxcdn.bootstrapcdn.com"
                                 "/bootstrap/3.3.7/js/bootstrap.min.js"))
-               [:body table]])]
-    (with-aws-credentials config
-      (ses/send-email :destination {:to-addresses [(:email config)]}
-                      :source (:email config)
-                      :message {:subject "Daily VRBO Position Alert"
-                                :body {:html table-html}}))))
+               [:body table]])
+        file-name (format "/tmp/search_rankings_report_%s.html"
+                          (f/unparse (f/formatter "yyyy-MM-dd") (l/local-now)))]
+    (spit file-name table-html)
+    (send-message {:user (:smtp-user config)
+                   :pass (:smtp-pass config)
+                   :host (:smtp-host config)
+                   :port 587}
+                  {:from (:email config)
+                   :to (:email config)
+                   :subject "VRBO Search Rankings Report"
+                   :body [{:type "text/html"
+                           :content table-html}
+                          {:type :attachment
+                           :content (java.io.File. file-name)}]})))
 
 
 (defn generate-table [listings]
@@ -40,11 +51,7 @@
                   :data-tr-attrs {:class "trattrs"}
                   :th-attrs (fn [label-key _] {:class (name label-key)})
                   :data-td-attrs
-                  (fn [label-key val]
-                    (case label-key
-                      :height (if (<= 180 val)
-                                {:class "above-avg"}
-                                {:class "below-avg"}) nil))
+                  (fn [label-key val] nil)
                   :data-value-transform
                   (fn [label-key val]
                     (if (= :unit label-key)

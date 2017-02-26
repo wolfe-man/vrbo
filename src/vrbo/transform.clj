@@ -9,15 +9,43 @@
   (f/unparse (f/formatter "yyyy-MM-dd") (l/local-now)))
 
 
+(defmacro retry
+  "Evaluates expr up to cnt + 1 times, retrying if an exception
+  is thrown. If an exception is thrown on the final attempt, it
+  is allowed to bubble up."
+  [cnt expr]
+  (letfn [(go [cnt]
+              (if (zero? cnt)
+                expr
+                `(try ~expr
+                      (catch Exception e#
+                        (retry ~(dec cnt) ~expr)))))]
+    (go cnt)))
+
+
+(defn execute-get-json [url]
+  (retry 3
+         (do (Thread/sleep 1000)
+             (with-open [inputstream
+                         (-> url
+                             java.net.URL.
+                             .openConnection
+                             (doto (.setRequestProperty "User-Agent"
+                                                        "Mozilla/5.0 ..."))
+                             .getContent)]
+               (let [result (->  inputstream
+                                 slurp
+                                 ((partial re-find #"(?<=VRBO.indexMaplisings = )(.*)(?=;)")))]
+                 (-> result
+                     first
+                     (json/read-str :key-fn keyword)))))))
+
+
 (def parse-vrbo-listing
   (memo/lru
    (fn [search-page-pg]
-     (Thread/sleep 500)
      (-> search-page-pg
-         slurp
-         ((partial re-find #"(?<=VRBO.indexMaplisings = )(.*)(?=;)"))
-         first
-         (json/read-str :key-fn keyword)
+         execute-get-json
          :listings
          ((partial map :listingNumber))))
    :lru/threshold 100))

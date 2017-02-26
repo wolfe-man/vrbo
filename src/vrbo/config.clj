@@ -7,7 +7,10 @@
   {:access-key (:access-key env)
    :secret-key (:secret-key env)
    :bucket-name (:s3-bucket env)
-   :email (:email env)})
+   :email (:email env)
+   :smtp-host (:smtp-host env)
+   :smtp-user (:smtp-user env)
+   :smtp-pass (:smtp-pass env)})
 
 
 (def dynamo-config (merge {:endpoint (:dynamodb-endpoint env)}

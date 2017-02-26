@@ -1,4 +1,4 @@
-(defproject vrbo "0.3.1"
+(defproject vrbo "0.3.2"
   :description "FIXME: write description"
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
@@ -12,6 +12,7 @@
                  [com.amazonaws/aws-java-sdk-dynamodb "1.11.75"]
                  [com.amazonaws/aws-java-sdk-s3 "1.11.82"]
                  [com.amazonaws/aws-java-sdk-ses "1.11.82"]
+                 [com.draines/postal "2.0.2"]
                  [dk.ative/docjure "1.11.0"]
                  [environ "1.1.0"]
                  [hiccup "1.0.5"]
