@@ -1,12 +1,50 @@
 (ns vrbo.transform
-  (:require [clj-time.local :as l]
+  (:require [amazonica.aws.dynamodbv2 :as db]
             [clj-time.format :as f]
+            [clj-time.local :as l]
+            [clj-time.core :as t]
             [clojure.core.memoize :as memo]
-            [clojure.data.json :as json]))
+            [clojure.data.json :as json]
+            [vrbo.config :refer [dynamo-config
+                                 with-aws-credentials]]))
 
 ;; need to enrch new columns
-(defn date-yyyy-MM-dd []
-  (f/unparse (f/formatter "yyyy-MM-dd") (l/local-now)))
+(defn date-yyyy-MM-dd [date-time]
+  (f/unparse (f/formatter "yyyy-MM-dd") date-time))
+
+
+(defn date-days-ago [days-ago]
+  (-> (l/local-now)
+      (t/minus (t/days days-ago))
+      date-yyyy-MM-dd))
+
+
+(defn dynamo-get-item [date listing-id]
+  (with-aws-credentials dynamo-config
+    (db/get-item :table-name "vrbo-listings"
+                 :key {:listing-id {:s listing-id}
+                       :date {:s date}})))
+
+
+(defn calc-historical-changes [listing-id overall-pos]
+  (letfn [(day-chg [listing-id overall-pos days-ago]
+            (if (string? overall-pos)
+              "N/A"
+              (->> listing-id
+                   (dynamo-get-item (date-days-ago days-ago))
+                   ((comp :overall-position :item))
+                   ((fn [x] (if x
+                              (let [chg (- x overall-pos)]
+                                (cond
+                                  (pos? chg) {:color "green"
+                                              :value chg}
+                                  (neg? chg) {:color "red"
+                                              :value chg}
+                                  :else {:value chg}))
+                              {:value "N/A"}))))))]
+    {:7-days-ago (day-chg listing-id overall-pos 7)
+     :30-days-ago (day-chg listing-id overall-pos 30)
+     :90-days-ago (day-chg listing-id overall-pos 90)}))
 
 
 (defmacro retry
@@ -24,6 +62,7 @@
 
 
 (defn execute-get-json [url]
+  ;;(println url)
   (retry 3
          (do (Thread/sleep 1000)
              (with-open [inputstream
@@ -84,10 +123,15 @@
 
 
 (defn enrich-vrbo-listings [{listing-id :listing-id :as listing-map}]
-  (let [position-and-page (get-position-and-page listing-map)]
-    (merge {:date (date-yyyy-MM-dd)}
+  (let [{overall-position :overall-position :as pos-and-page}
+        (get-position-and-page listing-map)
+        historical-changes (calc-historical-changes
+                            listing-id
+                            overall-position)]
+    (merge {:date (date-yyyy-MM-dd (l/local-now))}
            listing-map
-           position-and-page)))
+           pos-and-page
+           historical-changes)))
 
 
 (defn transform-listings [listings]

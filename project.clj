@@ -1,4 +1,4 @@
-(defproject vrbo "0.3.2"
+(defproject vrbo "0.4.0"
   :description "FIXME: write description"
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
