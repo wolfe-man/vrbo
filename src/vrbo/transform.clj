@@ -74,7 +74,8 @@
                              .getContent)]
                (let [result (->  inputstream
                                  slurp
-                                 ((partial re-find #"(?<=VRBO.indexMaplisings = )(.*)(?=;)")))]
+                                 ((partial re-find
+                                           #"(?<=window.__PAGE_DATA__ = )(.*)(?=;)")))]
                  (-> result
                      first
                      (json/read-str :key-fn keyword)))))))
@@ -85,7 +86,7 @@
    (fn [search-page-pg]
      (-> search-page-pg
          execute-get-json
-         :listings
+         ((comp :hits :searchResults))
          ((partial map :listingNumber))))
    :lru/threshold 100))
 
@@ -104,22 +105,25 @@
 
 
 (defn get-position-and-page [{listing-id :listing-id :as listing-map}]
-  (loop [pg 1]
-    (let [listings (get-vrbo-listings listing-map pg)
-          pos (when listings
-                (-> listings
-                    (.indexOf listing-id)
-                    inc))] ;;inc because 0 position is actually 1
-      (cond (empty? listings)
-            {:position "Listing not found"
-             :overall-position "Listing not found"
-             :page "Listing not found"}
-            (pos? pos)
-            {:position pos
-             :overall-position (overall-pos pos pg)
-             :page pg}
-            :else
-            (recur (inc pg))))))
+  (loop [pg 1
+         flag true]
+    (if flag
+      (let [listings (get-vrbo-listings listing-map pg)
+            pos (when listings
+                  (-> listings
+                      (.indexOf listing-id)
+                      inc))
+            update-flag (if (< (count listings) 50)
+                          false
+                          true)] ;;inc because 0 position is actually 1
+        (if (pos? pos)
+          {:position pos
+           :overall-position (overall-pos pos pg)
+           :page pg}
+          (recur (inc pg) update-flag)))
+      {:position "Listing not found"
+       :overall-position "Listing not found"
+       :page "Listing not found"})))
 
 
 (defn enrich-vrbo-listings [{listing-id :listing-id :as listing-map}]
