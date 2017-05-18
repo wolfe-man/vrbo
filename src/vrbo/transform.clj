@@ -8,7 +8,6 @@
             [vrbo.config :refer [dynamo-config
                                  with-aws-credentials]]))
 
-;; need to enrch new columns
 (defn date-yyyy-MM-dd [date-time]
   (f/unparse (f/formatter "yyyy-MM-dd") date-time))
 
@@ -111,11 +110,12 @@
       (let [listings (get-vrbo-listings listing-map pg)
             pos (when listings
                   (-> listings
-                      (.indexOf listing-id)
+                      (.indexOf (read-string listing-id))
                       inc))
             update-flag (if (< (count listings) 50)
                           false
                           true)] ;;inc because 0 position is actually 1
+        (println listings)
         (if (pos? pos)
           {:position pos
            :overall-position (overall-pos pos pg)
